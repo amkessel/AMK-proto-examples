@@ -1,0 +1,72 @@
+;; VoronoiDecomposition_Simple.proto
+;; Created By: Andrew Kessel
+;; Created Date: 9/10/10
+;;
+;; Sets the LED on a device based on which sense is closest.
+;; Sense 1 => Green
+;; Sense 2 => Blue
+;; Sense 3 => Red
+;; This is "simple" decomposition because if a node is equidistant from two or more senses
+;; then it simply stacks the LEDs on top of one another as opposed to somehow picking one
+;; to associate with and 
+;;
+;; To run:
+;; 1) proto -n 500 -grid -l -T -step "(VoronoiDecomposition_Simple(xxx))" where "xxx" is the
+;;    max distance you want the nodes to associate with a sense
+;; 2) Pick several devices and set their sense 1, 2 or 3 on ("t", "y" and "u")
+;; 3) "SHIFT-S" if you want to hide the devices
+;; 3) Press "x" to run the simulator
+
+(def clearLEDs()
+  (all (red 0) (blue 0) (green 0))
+)
+
+
+(def cannotFindAnySenses (s1Dist s2Dist s3Dist maxDist)
+  (and (> s1Dist maxDist) (and (> s2Dist maxDist) (> s3Dist maxDist)))
+)
+
+
+(def findClosestSense (s1Dist s2Dist s3Dist maxDist)
+  (if (cannotFindAnySenses s1Dist s2Dist s3Dist maxDist)
+    0
+    (if (and (< s1Dist s2Dist) (< s1Dist s3Dist))
+      1
+      (if (and (< s2Dist s1Dist) (< s2Dist s3Dist))
+        2
+        (if (and (< s3Dist s1Dist) (< s3Dist s2Dist))
+          3
+          (if (and (= s1Dist s2Dist) (< s1Dist s3Dist))
+            4 ;; equidistant between senses 1 and 2
+            (if (and (< s1Dist s2Dist) (= s1Dist s3Dist))
+              5 ;; equidistant between senses 1 and 3
+              (if (and (> s1Dist s2Dist) (= s2Dist s3Dist))
+                6 ;; equidistant between senses 2 and 3
+                7 ;; equidistant between senses 1, 2 and 3
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+)
+
+
+(def voronoi-decomposition-simple (maxDist)
+  (let ((s1Dist (gradient (sense 1))) (s2Dist (gradient (sense 2))) (s3Dist (gradient (sense 3))))
+    (if (cannotFindAnySenses s1Dist s2Dist s3Dist maxDist)
+      (clearLEDs)
+      (select (findClosestSense s1Dist s2Dist s3Dist maxDist)
+        (clearLEDs)
+        (green 1) ;; sense 1
+        (blue 1)  ;; sense 2
+        (red 1)   ;; sense 3
+        (1st (rgb (tup 0 1 1))) ;; equidistant between senses 1 and 2
+        (1st (rgb (tup 1 1 0))) ;; equidistant between senses 1 and 3
+        (1st (rgb (tup 1 0 1))) ;; equidistant between senses 2 and 3
+        (1st (rgb (tup 1 1 1))) ;; equidistant between senses 1, 2 and 3
+      )
+    )
+  )
+)
